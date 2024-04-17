@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<http:listener-config name="http-listener-config" doc:name="HTTP Listener config" doc:id="96c246da-a9c7-4fcb-92c2-cc3235a03c21" >
+		<http:listener-connection host="${http.host}" port="${http.port}" />
+	</http:listener-config>
+	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="0c41b685-7e09-45c6-bae5-b4b97b3210d6" name="gb-starwars-characters-process-api-config" api="api\gb-starwars-characters-process-api.raml" />
+	<vm:config name="vm-config" doc:name="VM Config" doc:id="02fc9de5-e397-41e8-b95e-12f00ef725f8" >
+		<vm:queues >
+			<vm:queue queueName="page" />
+			<vm:queue queueName="characters" queueType="PERSISTENT" />
+		</vm:queues>
+	</vm:config>
+	<os:object-store name="object_store-config" doc:name="Object store" doc:id="5fdfaf6c-8f3e-403d-a9b1-96e593080bc4" />
+	<http:request-config name="http-request-swapi-config" doc:name="HTTP Request configuration" doc:id="53fea812-32a0-45b1-8432-43b49145e5ac" responseTimeout="60000">
+		<http:request-connection host="${http.request.host}" connectionIdleTimeout="40000"/>
+	</http:request-config>
+	<global-property doc:name="Global Property" doc:id="76af260d-2fa8-47e0-ae79-b0950f404233" name="mule.env" value="local" />
+	<configuration-properties doc:name="Configuration properties" doc:id="7c2b3fb6-aa5b-4faa-aa1c-bdf5fa2fd76b" file="properties\common.properties" />
+	<configuration-properties doc:name="Configuration properties" doc:id="fafa0d4c-2268-48f3-8274-393d7aaccc0f" file="properties/${mule.env}.properties" />
+</mule>

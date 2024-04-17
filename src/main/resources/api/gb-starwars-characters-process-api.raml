@@ -1,0 +1,26 @@
+#%RAML 1.0
+title: gb-starwars-characters-process-api
+description: Process API to retrieve all the characters from the Star Wars movies and filter them by gender
+version: 1.0.0
+
+traits:
+  exception-responses: !include /traits/handling-responses.raml
+
+/characters:
+  get:
+    description: Return a CSV file with all of the characters from Star Wars
+    queryParameters:
+      gender:
+        required: false
+        type: string
+        enum:
+          - female
+          - male
+          - other
+    responses:
+      '200':
+        description: A list of all Star Wars characters
+        body:
+          application/csv:
+              example: !include /examples/csvExample.csv
+    is: [exception-responses]

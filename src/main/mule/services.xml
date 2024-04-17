@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="get-request-characters-from-swapi" doc:id="637ffae9-7eee-49a4-a9c9-6b344822fd60" >
+		<http:request method="GET" doc:name="Request" doc:id="d75acdd3-cea9-464e-9934-979f12902d26" config-ref="http-request-swapi-config" path='#["/api/people/"]' sendBodyMode="AUTO">
+			<http:body ><![CDATA[#[""]]]></http:body>
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"page" : vars.page
+}]]]></http:query-params>
+		</http:request>
+	</sub-flow>
+</mule>

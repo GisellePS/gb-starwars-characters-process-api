@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="get-characters-from-swapi-publish-flow" doc:id="243b13c5-dbe3-4a5b-9992-db931d083b60" >
+		<scheduler doc:name="Scheduler" doc:id="677960ce-bef8-4400-9e86-00e7366e36ba" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="10" timeUnit="MINUTES" />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Start Log" doc:id="e91e808d-3487-4e16-b7d7-dc272d772b20" message="Starting to process characters"/>
+		<vm:publish queueName="page" doc:name="Publish" doc:id="7f3de679-3705-4fdd-baf4-cd8333ba0553" config-ref="vm-config"/>
+	</flow>
+	<flow name="get-characters-from-swapi-listener-flow" doc:id="d85824fc-5951-4d64-ac34-cf0bc1f97d2b" >
+		<vm:listener doc:name="Listener" doc:id="8edd069d-3a5d-4736-bd1a-72fdb38a400a" config-ref="vm-config" queueName="page"/>
+		<os:retrieve doc:id="b1dc50b1-089e-4046-81b1-0f3147ad9a68" key="page" objectStore="object_store-config" target="page" doc:name="Retrieve page number">
+			<os:default-value ><![CDATA[#[1]]]></os:default-value>
+		</os:retrieve>
+		<os:retrieve doc:name="Retrieve stored characters" doc:id="07b8ea68-599b-4f53-99bb-f3756661d682" key="characters" objectStore="object_store-config" target="characters">
+			<os:default-value ><![CDATA[#[[]]]]></os:default-value>
+		</os:retrieve>
+		<flow-ref doc:name="get-request-characters-from-swapi" doc:id="0b3e858e-a451-47e5-96d6-e46e89e55ce0" name="get-request-characters-from-swapi"/>
+		<choice doc:name="Choice" doc:id="948a8f8c-9465-467d-aa43-9151e7da0ea3" >
+			<when expression="#[payload.next != null]">
+				<os:store doc:name="Store new characters" doc:id="8d7d5933-9915-4bb0-b706-3af7d25176d2" key="characters" objectStore="object_store-config">
+					<os:value ><![CDATA[#[%dw 2.0
+output application/json
+---
+vars.characters + payload.results]]]></os:value>
+				</os:store>
+				<os:store doc:name="Store new page number" doc:id="a24a6988-7946-41d4-ab8f-446c38046b6c" key="page" objectStore="object_store-config">
+					<os:value ><![CDATA[#[vars.page + 1]]]></os:value>
+				</os:store>
+				<vm:publish doc:name="Publish" doc:id="d1b843ae-082c-48ea-bbc4-7e9ac32fb8a9" config-ref="vm-config" queueName="page"/>
+			</when>
+			<otherwise >
+				<os:store doc:name="Store last characters" doc:id="b0916d11-998f-4b39-aecf-9fb906a8facb" key="characters" objectStore="object_store-config">
+					<os:value ><![CDATA[#[%dw 2.0
+output application/json
+---
+vars.characters + payload.results]]]></os:value>
+				</os:store>
+				<os:retrieve doc:name="Retrieve all the characters" doc:id="ebedd2f7-75b1-4ec7-955a-6413c6c6edf4" key="characters" target="characters" objectStore="object_store-config">
+					<os:default-value ><![CDATA[#[[]]]]></os:default-value>
+				</os:retrieve>
+				<ee:transform doc:name="Transform Message" doc:id="5b88d892-b1f2-455d-b74e-00e6f29530b1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv quoteValues=true,header=true
+---
+vars.characters flatMap ((charItem, charIndex) -> charItem map ((item, index) -> {
+    "name": item.name,
+    "height": item.height,
+    "mass": item.mass,
+    "hair": item.hair,
+    "color": item.color,
+    "skin_color": item.skin_color,
+    "eye_color": item.eye_color,
+    "birth_year": item.birth_year,
+    "gender": item.gender
+}))]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="f8d9b9c9-55b8-43b0-bef9-dd92a6790ce5" message="#[payload]"/>
+				<vm:publish doc:name="Publish" doc:id="9fbab9c1-108a-4ac1-9cde-962e1311642a" config-ref="vm-config" queueName="characters"/>
+				<os:clear doc:name="Clear" doc:id="80cd77ca-7bf3-49b5-bb95-ccbdde730f92" objectStore="object_store-config"/>
+				<logger level="INFO" doc:name="End Log" doc:id="70ac5c2c-7ae7-4e44-bef7-a69074c2d6de" message="Finished Processing the characters" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
